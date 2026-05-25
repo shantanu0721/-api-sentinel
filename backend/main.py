@@ -267,17 +267,8 @@ async def delete_api(api_id: int):
 
     try:
 
+        # first stop monitoring source
         db.execute(
-            text("""
-                DELETE FROM api_logs
-                WHERE api_id = :api_id
-            """),
-            {
-                "api_id": api_id
-            }
-        )
-
-        result = db.execute(
             text("""
                 DELETE FROM monitored_apis
                 WHERE id = :api_id
@@ -289,9 +280,21 @@ async def delete_api(api_id: int):
 
         db.commit()
 
+        # then cleanup orphan logs
+        db.execute(
+            text("""
+                DELETE FROM api_logs
+                WHERE api_id = :api_id
+            """),
+            {
+                "api_id": api_id
+            }
+        )
+
+        db.commit()
+
         return {
-            "message": "API deleted successfully",
-            "rows_deleted": result.rowcount
+            "message": "API deleted successfully"
         }
 
     except Exception as e:

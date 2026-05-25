@@ -28,7 +28,17 @@ function Dashboard() {
 
     }
 
-  useEffect(() => {
+ useEffect(() => {
+
+  const userId = localStorage.getItem("user_id")
+
+  if (!userId) {
+
+    navigate("/")
+
+    return
+
+  }
 
   fetchApis()
 
@@ -37,14 +47,6 @@ function Dashboard() {
     fetchApis()
 
   }, 5000)
-
-  const userId = localStorage.getItem("user_id")
-
-  if (!userId) {
-
-    navigate("/")
-
-  }
 
   return () => clearInterval(interval)
 

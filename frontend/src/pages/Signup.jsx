@@ -11,7 +11,7 @@ function Signup() {
   try {
 
     const response = await axios.post(
-      "http://https://api-sentinel-backend-888w.onrender.com/register",
+      "https://api-sentinel-backend-888w.onrender.com/register",
       {
         name: name,
         email: email

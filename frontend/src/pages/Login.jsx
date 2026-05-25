@@ -13,7 +13,7 @@ function Login() {
         try {
 
             const response = await axios.post(
-                "http://https://api-sentinel-backend-888w.onrender.com/login",
+                "https://api-sentinel-backend-888w.onrender.com/login",
                 {
                     email: email
                 }

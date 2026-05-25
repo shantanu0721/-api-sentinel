@@ -267,6 +267,16 @@ async def delete_api(api_id: int):
 
     try:
 
+        db.execute(
+            text("""
+                DELETE FROM api_logs
+                WHERE api_id = :api_id
+            """),
+            {
+                "api_id": api_id
+            }
+        )
+
         result = db.execute(
             text("""
                 DELETE FROM monitored_apis

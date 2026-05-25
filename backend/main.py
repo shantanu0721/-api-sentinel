@@ -261,33 +261,45 @@ LIMIT 10
 
 
 @app.delete("/apis/{api_id}")
-def delete_api(api_id: int):
+async def delete_api(api_id: int):
 
     db = SessionLocal()
 
     try:
 
+        # delete logs first
         db.execute(
-            text("DELETE FROM api_logs WHERE api_id = :api_id"),
-            {"api_id": api_id}
+            text("""
+                DELETE FROM api_logs
+                WHERE api_id = :api_id
+            """),
+            {
+                "api_id": api_id
+            }
         )
 
+        # then delete api
         db.execute(
-            text("DELETE FROM alerts WHERE api_id = :api_id"),
-            {"api_id": api_id}
-        )
-
-        db.execute(
-            text("DELETE FROM monitored_apis WHERE id = :api_id"),
-            {"api_id": api_id}
+            text("""
+                DELETE FROM monitored_apis
+                WHERE id = :api_id
+            """),
+            {
+                "api_id": api_id
+            }
         )
 
         db.commit()
 
-        return {"message": "API deleted successfully"}
+        return {
+            "message": "API deleted successfully"
+        }
 
     except Exception as e:
-        return {"error": str(e)}
+
+        return {
+            "error": str(e)
+        }
 
     finally:
         db.close()

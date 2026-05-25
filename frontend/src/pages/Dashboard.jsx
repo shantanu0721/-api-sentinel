@@ -92,7 +92,7 @@ const fetchApis = async () => {
 
     )
 
-    setApis(response.data)
+    setApis(Array.isArray(response.data) ? response.data : [])
 
   } catch (error) {
 
@@ -199,7 +199,7 @@ const fetchApis = async () => {
 
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    {apis.map((api) => (
+    {Array.isArray(apis) && apis.map((api) => (
 
       <div
         key={api.id}

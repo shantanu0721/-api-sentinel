@@ -259,7 +259,7 @@ const fetchApis = async () => {
         `https://api-sentinel-backend-888w.onrender.com/apis/${api.id}`
       )
 
-      fetchApis()
+      setApis(apis.filter((item) => item.id !== api.id))
 
     } catch (error) {
 

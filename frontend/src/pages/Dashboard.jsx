@@ -37,7 +37,6 @@ function Dashboard() {
     navigate("/")
 
     return
-
   }
 
   fetchApis()
@@ -251,25 +250,29 @@ const fetchApis = async () => {
 
         </div>
         <button
-  onClick={async () => {
+onClick={async () => {
 
-    try {
+  try {
 
-      await axios.delete(
-        `https://api-sentinel-backend-888w.onrender.com/apis/${api.id}`
-      )
+    console.log("Deleting API ID:", api.id)
 
-      setApis(apis.filter((item) => item.id !== api.id))
+    const response = await axios.delete(
+      `https://api-sentinel-backend-888w.onrender.com/apis/${api.id}`
+    )
 
-    } catch (error) {
+    console.log(response.data)
 
-      console.log(error)
+    await fetchApis()
 
-      alert("Failed to delete API")
+  } catch (error) {
 
-    }
+    console.log(error)
 
-  }}
+    alert("Failed to delete API")
+
+  }
+
+}}
   className="mt-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold"
 >
   Delete

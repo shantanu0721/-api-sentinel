@@ -120,6 +120,7 @@ async def add_api(request: Request):
 
 
 @app.get("/apis/{user_id}")
+@app.post("/apis")
 async def get_user_apis(user_id: int):
 
     db = SessionLocal()

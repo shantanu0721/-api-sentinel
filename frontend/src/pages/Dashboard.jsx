@@ -254,15 +254,13 @@ onClick={async () => {
 
   try {
 
-    console.log("Deleting API ID:", api.id)
-
-    const response = await axios.delete(
+    await axios.delete(
       `https://api-sentinel-backend-888w.onrender.com/apis/${api.id}`
     )
 
-    console.log(response.data)
-
-    await fetchApis()
+    setApis((prevApis) =>
+      prevApis.filter((item) => item.id !== api.id)
+    )
 
   } catch (error) {
 

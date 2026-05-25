@@ -20,7 +20,6 @@ def read_root():
 
 
 @app.get("/apis")
-@app.get("/apis")
 def get_apis():
 
     db = SessionLocal()
@@ -87,6 +86,110 @@ async def add_api(request: Request):
     db = SessionLocal()
 
     try:
+
+        db.execute(
+            text("""
+                INSERT INTO monitored_apis
+                (user_id, name, url, method, interval_seconds, timeout_seconds)
+
+                VALUES
+                (:user_id, :name, :url, :method, :interval, :timeout)
+            """),
+            {
+                "user_id": data["user_id"],
+                "name": data["name"],
+                "url": data["url"],
+                "method": data["method"],
+                "interval": data["interval_seconds"],
+                "timeout": data["timeout_seconds"]
+            }
+        )
+
+        db.commit()
+
+        return {"message": "API added successfully"}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+    finally:
+        db.close()
+
+
+@app.get("/apis/{user_id}")
+async def get_user_apis(user_id: int):
+
+    db = SessionLocal()
+
+    try:
+
+        result = db.execute(
+            text("""
+                SELECT
+                monitored_apis.*,
+                latest_logs.success,
+                latest_logs.status_code,
+                latest_logs.response_time_ms
+
+            FROM monitored_apis
+
+            LEFT JOIN (
+                SELECT DISTINCT ON (api_id)
+                    api_id,
+                    success,
+                    status_code,
+                    response_time_ms,
+                    checked_at
+
+                FROM api_logs
+
+                ORDER BY api_id, checked_at DESC
+            ) AS latest_logs
+
+            ON monitored_apis.id = latest_logs.api_id
+
+            WHERE monitored_apis.user_id = :user_id
+            """),
+            {
+                "user_id": user_id
+            }
+        )
+
+        apis = result.fetchall()
+
+        return [
+
+            {
+                "id": api.id,
+                "name": api.name,
+                "url": api.url,
+                "method": api.method,
+                "interval_seconds": api.interval_seconds,
+                "timeout_seconds": api.timeout_seconds,
+                "success": api.success,
+                "status_code": api.status_code,
+                "response_time_ms": api.response_time_ms
+            }
+
+            for api in apis
+
+        ]
+
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
+
+    finally:
+        db.close()
+async def add_api(request: Request):
+
+    data = await request.json()
+
+    db = SessionLocal()
+
+    try:
         
 
         db.execute(
@@ -118,6 +221,7 @@ async def add_api(request: Request):
         db.close()
 
 @app.get("/alerts")
+
 def get_alerts():
 
     db = SessionLocal()
@@ -150,6 +254,7 @@ LIMIT 10
 
     finally:
         db.close()
+
 
 @app.delete("/apis/{api_id}")
 def delete_api(api_id: int):
@@ -223,39 +328,154 @@ async def register_user(request: Request):
     finally:
         db.close()
 
+@app.post("/login")
+async def login_user(request: Request):
+
+    data = await request.json()
+
+    db = SessionLocal()
+
+    try:
+
+        result = db.execute(
+            text("""
+                SELECT *
+                FROM users
+                WHERE email = :email
+            """),
+            {
+                "email": data["email"]
+            }
+        )
+
+        user = result.fetchone()
+
+        if not user:
+
+            return {
+                "error": "User not found"
+            }
+
+        return {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
+
+    except Exception as e:
+
+        return {
+            "error": str(e)
+        }
+
+    finally:
+        db.close()
+
 
 
 # api testing-------
 from services.api_checker import check_api
+from services.email_service import send_email
+
 @app.get("/check")
 def check():
+
     db = SessionLocal()
 
-
     try:
-        api_id = 1  # temporary (we already inserted 1 API manually)
 
-        result = check_api("https://jsonplaceholder.typicode.com/posts")
-
-        db.execute(
+        apis = db.execute(
             text("""
-                INSERT INTO api_logs (api_id, status_code, response_time_ms, success)
-                VALUES (:api_id, :status_code, :response_time, :success)
-            """),
-            {
-                "api_id": api_id,
-                "status_code": result["status_code"],
-                "response_time": result["response_time"],
-                "success": result["success"]
-            }
-        )
+                SELECT id, url
+                FROM monitored_apis
+            """)
+        ).fetchall()
+
+        results = []
+
+        for api in apis:
+
+            result = check_api(api.url)
+            if result["success"] == False:
+                    send_email(
+                    "YOUR_RECEIVER_EMAIL@gmail.com",
+                    "API DOWN ALERT",
+                    f"{api.url} is DOWN"
+                )
+
+                    user_result = db.execute(
+                        text("""
+                            SELECT users.email, monitored_apis.name
+
+                            FROM users
+
+                            JOIN monitored_apis
+                            ON users.id = monitored_apis.user_id
+
+                            WHERE monitored_apis.id = :api_id
+                        """),
+                        {
+                            "api_id": api.id
+                        }
+                    ).fetchone()
+
+                    if user_result:
+
+                        message = f"""
+                    API DOWN ALERT
+
+                    API Name:
+                    {user_result.name}
+
+                    API URL:
+                    {api.url}
+
+                    Reason:
+                    {result["error"]}
+                    """
+
+                        send_email(
+                            user_result.email,
+                            "API Sentinel Alert",
+                            message
+                        )
+
+            db.execute(
+                text("""
+                    INSERT INTO api_logs
+                    (api_id, status_code, response_time_ms, success)
+
+                    VALUES
+                    (:api_id, :status_code, :response_time, :success)
+                """),
+                {
+                    "api_id": api.id,
+                    "status_code": result["status_code"],
+                    "response_time": result["response_time"],
+                    "success": result["success"]
+                }
+            )
+
+            results.append({
+                "api_id": api.id,
+                "url": api.url,
+                "result": result
+            })
 
         db.commit()
 
-        return result
+        return {
+            "message": "All APIs checked",
+            "results": results
+        }
 
     except Exception as e:
-        return {"error": str(e)}
+
+        return {
+            "error": str(e)
+        }
 
     finally:
+
         db.close()
+

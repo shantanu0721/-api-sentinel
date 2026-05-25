@@ -91,6 +91,7 @@ const fetchApis = async () => {
       `https://api-sentinel-backend-888w.onrender.com/apis/${localStorage.getItem("user_id")}`
 
     )
+    console.log(response.data)
 
     setApis(Array.isArray(response.data) ? response.data : [])
 

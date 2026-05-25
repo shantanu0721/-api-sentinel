@@ -54,7 +54,7 @@ function Dashboard() {
   try {
 
     await axios.post(
-      "http://127.0.0.1:8000/apis",
+      "http://https://api-sentinel-backend-888w.onrender.com/apis",
       {
 
         user_id: localStorage.getItem("user_id"),
@@ -86,7 +86,7 @@ const fetchApis = async () => {
 
     const response = await axios.get(
 
-      `http://127.0.0.1:8000/apis/${localStorage.getItem("user_id")}`
+      `http://https://api-sentinel-backend-888w.onrender.com/apis/${localStorage.getItem("user_id")}`
 
     )
 
@@ -253,7 +253,7 @@ const fetchApis = async () => {
     try {
 
       await axios.delete(
-        `http://127.0.0.1:8000/apis/${api.id}`
+        `http://https://api-sentinel-backend-888w.onrender.com/apis/${api.id}`
       )
 
       fetchApis()

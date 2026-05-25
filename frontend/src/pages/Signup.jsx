@@ -11,7 +11,7 @@ function Signup() {
   try {
 
     const response = await axios.post(
-      "http://127.0.0.1:8000/register",
+      "http://https://api-sentinel-backend-888w.onrender.com/register",
       {
         name: name,
         email: email
